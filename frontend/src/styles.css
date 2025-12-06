@@ -86,3 +86,12 @@ button:hover {
   margin-top: 10px;
   font-weight: bold;
 }
+
+.app-container h2 {
+  margin-bottom: 15px;
+  color: #1565c0;
+}
+
+.app-container button {
+  margin-top: 10px;
+}
