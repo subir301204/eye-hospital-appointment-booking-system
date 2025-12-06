@@ -1,103 +1,161 @@
-const db = require(".../config/db");
-const { v4: uuidv4 } = require("uuid");
+import db from "../config/db.js";
+import crypto from "crypto";
 
-// Helper: count bookings per date
-const getBookingCount = (date, callback) => {
-  db.query(
-    "SELECT COUNT(*) AS count FROM appointment WHERE appointment_date=? AND status='Booked'",
-    [date],
-    callback
-  );
-};
+// Helper to generate booking ID
+function generateBookingId() {
+  return "BK" + Math.floor(100000 + Math.random() * 900000);
+}
 
-// Book Appointment
-exports.bookAppointment = (req, res) => {
-  const { name, verification_id, date, department, doctor } = req.body;
+// BOOK APPOINTMENT
+export const bookAppointment = (req, res) => {
+  const {
+    verification_id,
+    department,
+    doctor_id,
+    appointment_date,
+    previous_booking_id,
+  } = req.body;
 
-  // Rule: Always 2 days before
-  let today = new Date();
-  let selected = new Date(date);
-  let diffDays = (selected - today) / (1000 * 60 * 60 * 24);
+  // RULE 1 - Must book 2 days before
+  const today = new Date();
+  const selected = new Date(appointment_date);
+  const diff = (selected - today) / (1000 * 3600 * 24);
 
-  if (diffDays < 2) {
+  if (diff < 2)
     return res
       .status(400)
-      .json({ message: "Appointment must be booked 2 days before" });
-  }
+      .json({ message: "Booking must be made 2 days before." });
 
-  // Check Booking limit per day (limit = 5 for simplicity)
-  getBookingCount(date, (err, result) => {
-    if (result[0].count >= 5) {
-      return res
-        .status(400)
-        .json({ message: "Appointment full, choose another date" });
-    }
+  // RULE - Limit bookings per day
+  db.query(
+    "SELECT COUNT(*) AS count FROM appointments WHERE appointment_date = ?",
+    [appointment_date],
+    (err, result) => {
+      if (result[0].count >= 20) {
+        return res
+          .status(400)
+          .json({ message: "Booking limit reached for this date." });
+      }
 
-    db.query(
-      "SELECT * FORM patients WHERE verification_id=?",
-      [verification_id],
-      (err, patients) => {
-        if (patients.length === 0) {
-          //First time patient must go to General department
-          if (department !== "General") {
-            return res.status(400).json({
-              message: "First time patients must choose General Department",
-            });
+      // Check if patient exists
+      db.query(
+        "SELECT * FROM patients WHERE verification_id = ?",
+        [verification_id],
+        (err, patients) => {
+          let patient_id;
+          let is_first_time = false;
+
+          if (patients.length === 0) {
+            // First-time patient
+            db.query(
+              "INSERT INTO patients (verification_id) VALUES (?)",
+              [verification_id],
+              (err, result) => {
+                patient_id = result.insertId;
+                is_first_time = true;
+                continueBooking();
+              }
+            );
+          } else {
+            patient_id = patients[0].id;
+            is_first_time = patients[0].is_first_time;
+            continueBooking();
           }
 
-          // Insert patient
-          db.query(
-            "INSERT INTO patients(name, verification_id) VALUES(?, ?)",
-            [name, verification_id],
-            (err, result) => {
-              createAppointment(result.insertId);
+          function continueBooking() {
+            // RULE — First-time must choose General
+            if (is_first_time && department !== "General") {
+              return res.status(400).json({
+                message: "First-time patients must book in General department.",
+              });
             }
-          );
-        } else {
-          createAppointment(patients[0].id);
-        }
-      }
-    );
 
-    function createAppointment(patient_id) {
-      let booking_id = "EYE-" + Math.floor(10000 + Math.random() * 90000);
+            // RULE — If selecting General, doctor must be null
+            const finalDoctor = department === "General" ? null : doctor_id;
 
-      if (department === "General") doctor = null;
+            const booking_id = generateBookingId();
 
-      db.query(
-        "INSERT INTO appointments(booking_id, patient_id, appointment_data, department, doctor) VALUES(?,?,?,?,?)",
-        [booking_id, patient_id, date, department, doctor],
-        (err) => {
-          if (err) throw err;
-          res.json({ message: "Appointment Booked", booking_id });
+            const sql = `
+              INSERT INTO appointments 
+              (patient_id, booking_id, department, doctor_id, appointment_date, time_slot, previous_booking_id) 
+              VALUES (?, ?, ?, ?, ?, '10:00 AM - 11:00 AM', ?)
+            `;
+
+            db.query(
+              sql,
+              [
+                patient_id,
+                booking_id,
+                department,
+                finalDoctor,
+                appointment_date,
+                previous_booking_id || null,
+              ],
+              () => {
+                // Mark first-time as false
+                if (is_first_time) {
+                  db.query(
+                    "UPDATE patients SET is_first_time = FALSE WHERE id=?",
+                    [patient_id]
+                  );
+                }
+
+                res.json({ booking_id, message: "Booking successful" });
+              }
+            );
+          }
         }
       );
     }
-  });
+  );
 };
 
-// Cancel Appointment
-exports.cancelAppointment = (req, res) => {
-  const { booking_id } = req.body;
+// CHECK STATUS
+export const checkStatus = (req, res) => {
+  const { id } = req.params;
 
   db.query(
-    "UPDATE appointment SET status='Cancelled' WHERE booking_id=?",
-    [booking_id],
+    "SELECT status FROM appointments WHERE booking_id=?",
+    [id],
     (err, result) => {
-      if (result.affectedRows == 0)
-        return res.status(404).json({ message: "Booking not found" });
-      res.json({ message: "Appointment Cancelled" });
+      if (!result.length) return res.status(404).json({ message: "Not found" });
+      res.json({ status: result[0].status });
     }
   );
 };
 
-//Feedback
-exports.addFeedback = (req, res) => {
+// FEEDBACK
+export const feedback = (req, res) => {
   const { booking_id, message } = req.body;
 
   db.query(
-    "INSERT INTO feedback(booking_id, message) VALUES(?, ?",
+    "INSERT INTO feedback (booking_id, message) VALUES (?, ?)",
     [booking_id, message],
-    () => res.json({ message: "Feedback Submitted" })
+    () => {
+      res.json({ message: "Feedback sent!" });
+    }
+  );
+};
+
+// CANCEL BOOKING
+export const cancelBooking = (req, res) => {
+  const { booking_id } = req.body;
+
+  if (!booking_id) {
+    return res.status(400).json({ message: "Booking ID is required" });
+  }
+
+  db.query(
+    "UPDATE appointments SET status='Cancelled' WHERE booking_id=?",
+    [booking_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: "Server error" });
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      res.json({ message: "Booking cancelled successfully" });
+    }
   );
 };
