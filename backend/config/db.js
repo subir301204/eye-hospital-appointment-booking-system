@@ -1,15 +1,25 @@
-import mysql from "mysql2";
+// backend/config/db.js
+import mysql from "mysql";
+import dotenv from "dotenv";
 
+dotenv.config(); // load variables from .env if present
+
+// Create MySQL connection
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "mysql@go",
-  database: "eye_hospital",
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "eye_hospital",
 });
 
+// Connect to database
 db.connect((err) => {
-  if (err) throw err;
-  console.log("MySQL Connected");
+  if (err) {
+    console.error("Database connection failed:", err);
+    process.exit(1); // Stop server if DB connection fails
+  } else {
+    console.log("Connected to MySQL database.");
+  }
 });
 
 export default db;
