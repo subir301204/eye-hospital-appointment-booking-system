@@ -5,9 +5,12 @@ function BookingStatus() {
   const [bookingId, setBookingId] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
 
-  const checkStatus = async () => {
-    if (!bookingId) {
-      setStatusMsg("Please enter a Booking ID");
+  const checkStatus = async (e) => {
+    e.preventDefault();
+    setStatusMsg("");
+
+    if (!bookingId.trim()) {
+      setStatusMsg("Please enter Booking ID");
       return;
     }
 
@@ -20,11 +23,11 @@ function BookingStatus() {
       if (!res.ok) {
         setStatusMsg("❌ Booking not found");
       } else {
-        setStatusMsg("✅ Status: " + data.status);
+        setStatusMsg("✅ Status: " + (data.status || "Unknown"));
       }
     } catch (err) {
       console.error(err);
-      setStatusMsg("❌ Error checking status");
+      setStatusMsg("❌ Server error");
     }
   };
 
@@ -32,14 +35,16 @@ function BookingStatus() {
     <div className="app-container" style={{ marginTop: "30px" }}>
       <h2>Check Appointment Status</h2>
 
-      <input
-        type="text"
-        placeholder="Enter Booking ID"
-        value={bookingId}
-        onChange={(e) => setBookingId(e.target.value)}
-      />
+      <form onSubmit={checkStatus}>
+        <input
+          type="text"
+          placeholder="Enter Booking ID"
+          value={bookingId}
+          onChange={(e) => setBookingId(e.target.value)}
+        />
 
-      <button onClick={checkStatus}>Check Status</button>
+        <button type="submit">Check Status</button>
+      </form>
 
       {statusMsg && <p className="success-message">{statusMsg}</p>}
     </div>
