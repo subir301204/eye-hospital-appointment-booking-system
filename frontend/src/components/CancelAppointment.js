@@ -1,16 +1,12 @@
 import React, { useState } from "react";
-import "../styles.css";
 
 function CancelAppointment() {
   const [bookingId, setBookingId] = useState("");
-  const [statusMsg, setStatusMsg] = useState("");
+  const [message, setMessage] = useState("");
 
-  const cancelBooking = async (e) => {
-    e.preventDefault();
-    setStatusMsg("");
-
-    if (!bookingId.trim()) {
-      setStatusMsg("Please enter Booking ID");
+  const cancel = async () => {
+    if (!bookingId) {
+      setMessage("Please enter a booking ID.");
       return;
     }
 
@@ -22,34 +18,28 @@ function CancelAppointment() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        setStatusMsg("❌ " + (data.message || "Cancellation failed"));
-      } else {
-        setStatusMsg("✅ " + (data.message || "Cancelled"));
-      }
-    } catch (err) {
-      console.error(err);
-      setStatusMsg("❌ Server error");
+      setMessage(data.message);
+    } catch (error) {
+      setMessage("Server error. Please try again.");
     }
   };
 
   return (
-    <div className="app-container" style={{ marginTop: "30px" }}>
-      <h2>Cancel Appointment</h2>
+    <div className="card">
+      <h3>Cancel Appointment</h3>
 
-      <form onSubmit={cancelBooking}>
-        <input
-          type="text"
-          placeholder="Enter Booking ID"
-          value={bookingId}
-          onChange={(e) => setBookingId(e.target.value)}
-        />
+      <input
+        className="input-box"
+        placeholder="Enter Booking ID"
+        value={bookingId}
+        onChange={(e) => setBookingId(e.target.value)}
+      />
 
-        <button type="submit">Cancel Appointment</button>
-      </form>
+      <button className="btn" onClick={cancel}>
+        Cancel Appointment
+      </button>
 
-      {statusMsg && <p className="success-message">{statusMsg}</p>}
+      {message && <p className="success-message">{message}</p>}
     </div>
   );
 }
