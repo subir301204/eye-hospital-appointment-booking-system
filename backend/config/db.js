@@ -1,5 +1,5 @@
 // backend/config/db.js
-import mysql from "mysql";
+import mysql from "mysql2";
 import dotenv from "dotenv";
 
 dotenv.config(); // load variables from .env if present

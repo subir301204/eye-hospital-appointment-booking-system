@@ -1,78 +1,107 @@
-/* Main container used by all sections */
+/* Main Container */
 .app-container {
-  background: #ffffff;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-  margin: 20px auto;
-  max-width: 480px;
+  background: var(--surface);
+  padding: 3rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 600px;
+  border: 1px solid var(--border);
+}
+
+.app-container h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
   text-align: center;
-  transition: 0.3s ease;
+  margin-bottom: 2rem;
+  background: linear-gradient(to right, var(--primary), #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Section titles unify all headings */
-.app-container h2,
-.app-container h3 {
-  margin-bottom: 15px;
-  font-size: 22px;
+/* Sections */
+h2,
+h3 {
+  font-size: 1.25rem;
   font-weight: 600;
-  color: #222;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-/* Form styling — same for all components */
+/* Forms */
 form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1rem;
 }
 
-/* Input fields unified */
+label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
 input,
 select,
 textarea {
   width: 100%;
-  padding: 12px;
+  padding: 0.75rem 1rem;
   border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  outline: none;
-  transition: 0.2s ease;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  font-size: 1rem;
+  transition: all 0.2s;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #007bff;
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  background: white;
 }
 
-/* Primary button style for ALL */
+/* Buttons */
 button {
-  padding: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  background: #007bff;
+  background: var(--primary);
   color: white;
-  cursor: pointer;
-  transition: 0.2s ease;
+  border: none;
+  padding: 0.875rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 button:hover {
-  background: #005fcc;
+  background: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
-/* Success / error text unified */
+button:active {
+  transform: translateY(0);
+}
+
+/* Status Messages */
 .success-message {
-  margin-top: 12px;
-  font-size: 16px;
-  font-weight: 500;
-  color: green;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  text-align: center;
 }
 
 .error-message {
-  margin-top: 12px;
-  font-size: 16px;
-  font-weight: 500;
-  color: red;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  text-align: center;
 }

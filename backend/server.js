@@ -21,10 +21,8 @@ app.get("/", (req, res) => {
   res.send("Eye Hospital Appointment Backend is running!");
 });
 
-// TODO: Import your routers here
-// Example:
-// import patientRoutes from "./routes/patients.js";
-// app.use("/patients", patientRoutes);
+import appointmentRoutes from "./routes/appointmentRoutes.js";
+app.use("/api/appointments", appointmentRoutes);
 
 // Start server
 app.listen(PORT, () => {
