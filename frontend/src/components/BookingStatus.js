@@ -3,14 +3,14 @@ import "../styles.css";
 
 function BookingStatus() {
   const [bookingId, setBookingId] = useState("");
-  const [statusMsg, setStatusMsg] = useState("");
+  const [message, setMessage] = useState("");
 
   const checkStatus = async (e) => {
     e.preventDefault();
-    setStatusMsg("");
+    setMessage("");
 
     if (!bookingId.trim()) {
-      setStatusMsg("Please enter Booking ID");
+      setMessage("Please enter Booking ID");
       return;
     }
 
@@ -21,18 +21,18 @@ function BookingStatus() {
       const data = await res.json();
 
       if (!res.ok) {
-        setStatusMsg("❌ Booking not found");
+        setMessage("❌ " + (data.message || "Booking not found"));
       } else {
-        setStatusMsg("✅ Status: " + (data.status || "Unknown"));
+        setMessage("✅ Status: " + (data.status || "Unknown"));
       }
     } catch (err) {
       console.error(err);
-      setStatusMsg("❌ Server error");
+      setMessage("❌ Server error. Try again.");
     }
   };
 
   return (
-    <div className="app-container" style={{ marginTop: "30px" }}>
+    <div className="app-container" style={{ marginTop: 20 }}>
       <h2>Check Appointment Status</h2>
 
       <form onSubmit={checkStatus}>
@@ -46,7 +46,15 @@ function BookingStatus() {
         <button type="submit">Check Status</button>
       </form>
 
-      {statusMsg && <p className="success-message">{statusMsg}</p>}
+      {message && (
+        <p
+          className={
+            message.startsWith("✅") ? "success-message" : "error-message"
+          }
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 }

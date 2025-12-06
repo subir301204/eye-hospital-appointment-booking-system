@@ -1,136 +1,137 @@
 import React, { useState } from "react";
+import "../styles.css";
 
-const doctorsByDepartment = {
-  General: [],
-  Cornea: ["Dr. Amit Sharma", "Dr. Rina Patel"],
-  Retina: ["Dr. Kunal Verma", "Dr. Sneha Roy"],
-  Glaucoma: ["Dr. Rakesh Gupta"],
-};
-
-function BookingForm({ setMessage }) {
+function BookingForm() {
   const [name, setName] = useState("");
+  const [verificationId, setVerificationId] = useState("");
   const [date, setDate] = useState("");
   const [department, setDepartment] = useState("General");
   const [doctor, setDoctor] = useState("");
-  const [previousId, setPreviousId] = useState("");
-  const [hasVisitedBefore, setHasVisitedBefore] = useState(false);
+  const [prevBookingId, setPrevBookingId] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handlePreviousIdChange = (e) => {
-    const value = e.target.value;
-    setPreviousId(value);
-
-    // Fake validation (Later it will be from backend)
-    if (value.startsWith("EYE")) {
-      setHasVisitedBefore(true);
-    } else {
-      setHasVisitedBefore(false);
-      setDepartment("General");
-      setDoctor("");
-    }
+  const doctorsByDepartment = {
+    General: [],
+    Cornea: ["Dr. Amit Sharma", "Dr. Rina Patel"],
+    Retina: ["Dr. Kunal Verma", "Dr. Sneha Roy"],
+    Glaucoma: ["Dr. Rakesh Gupta"],
   };
 
-  const handleDepartmentChange = (e) => {
-    setDepartment(e.target.value);
-    setDoctor("");
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
 
-    if (!name || !date) {
-      alert("Please fill required fields");
+    if (!verificationId || !date || !name) {
+      setMessage("Please fill all required fields.");
       return;
     }
 
-    // Rule: First time patients ONLY General
-    if (!hasVisitedBefore && department !== "General") {
-      alert("First time patients can only select General department.");
-      return;
+    // call backend
+    try {
+      const res = await fetch("http://localhost:5000/api/appointments/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          verification_id: verificationId,
+          department,
+          doctor_id: doctor || null,
+          appointment_date: date,
+          previous_booking_id: prevBookingId || null,
+          name,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage("❌ " + (data.message || "Booking failed"));
+      } else {
+        setMessage("✅ Booked. Booking ID: " + data.booking_id);
+        // optional: clear fields
+        setName("");
+        setVerificationId("");
+        setDate("");
+        setDepartment("General");
+        setDoctor("");
+        setPrevBookingId("");
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("❌ Server error. Try again.");
     }
-
-    // Rule: For non-general department, doctor is mandatory
-    if (department !== "General" && doctor === "") {
-      alert("Select a doctor");
-      return;
-    }
-
-    const bookingId = "EYE" + Math.floor(10000 + Math.random() * 90000);
-
-    setMessage(
-      `✅ Appointment Confirmed!
-New Booking ID: ${bookingId}
-Previous Booking ID: ${previousId || "None"}
-Department: ${department}
-Doctor: ${doctor || "Assigned After Diagnosis"}`
-    );
-
-    // Reset fields
-    setName("");
-    setDate("");
-    setDepartment("General");
-    setDoctor("");
-    setPreviousId("");
-    setHasVisitedBefore(false);
   };
 
   return (
-    <form>
-      {/* Previous Booking ID */}
-      <input
-        type="text"
-        placeholder="Previous Booking ID (If any)"
-        value={previousId}
-        onChange={handlePreviousIdChange}
-      />
+    <div className="app-container">
+      <h2>Book Appointment</h2>
 
-      {/* Patient Name */}
-      <input
-        type="text"
-        placeholder="Patient Full Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Patient Full Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-      {/* Date */}
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
+        <input
+          type="text"
+          placeholder="Verification ID (Aadhaar / ID)"
+          value={verificationId}
+          onChange={(e) => setVerificationId(e.target.value)}
+        />
 
-      {/* Department */}
-      <select
-        value={department}
-        onChange={handleDepartmentChange}
-        disabled={!hasVisitedBefore}
-      >
-        <option value="General">General Department</option>
-        <option value="Cornea">Cornea</option>
-        <option value="Retina">Retina</option>
-        <option value="Glaucoma">Glaucoma</option>
-      </select>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
 
-      {/* Doctor */}
-      <select
-        value={doctor}
-        onChange={(e) => setDoctor(e.target.value)}
-        disabled={department === "General"}
-      >
-        <option value="">Select Doctor</option>
+        <input
+          type="text"
+          placeholder="Previous Booking ID (If any)"
+          value={prevBookingId}
+          onChange={(e) => setPrevBookingId(e.target.value)}
+        />
 
-        {doctorsByDepartment[department]?.map((doc, index) => (
-          <option key={index} value={doc}>
-            {doc}
-          </option>
-        ))}
+        <select
+          value={department}
+          onChange={(e) => {
+            setDepartment(e.target.value);
+            setDoctor("");
+          }}
+        >
+          <option value="General">General Department</option>
+          <option value="Cornea">Cornea</option>
+          <option value="Retina">Retina</option>
+          <option value="Glaucoma">Glaucoma</option>
+        </select>
 
-        {department === "General" && (
-          <option disabled>Doctor assigned after diagnosis</option>
-        )}
-      </select>
+        <select
+          value={doctor}
+          onChange={(e) => setDoctor(e.target.value)}
+          disabled={department === "General"}
+        >
+          <option value="">Select Doctor</option>
+          {doctorsByDepartment[department].map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
 
-      <button onClick={handleSubmit}>Book Appointment</button>
-    </form>
+        <button type="submit">Book Appointment</button>
+      </form>
+
+      {message && (
+        <p
+          className={
+            message.startsWith("✅") ? "success-message" : "error-message"
+          }
+        >
+          {message}
+        </p>
+      )}
+    </div>
   );
 }
 
