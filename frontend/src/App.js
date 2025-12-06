@@ -1,22 +1,20 @@
 import React from "react";
 import BookingForm from "./components/BookingForm";
 import BookingStatus from "./components/BookingStatus";
-import CancelAppointment from "./components/CancelAppointment";
 import Feedback from "./components/Feedback";
+import CancelAppointment from "./components/CancelAppointment"; // <-- add this
 
 function App() {
   return (
-    <div>
-      <h1 style={{ textAlign: "center", marginTop: "20px" }}>
-        Eye Hospital Appointment System
-      </h1>
-
+    <div className="app-container">
+      <h1>Eye Hospital Appointment System</h1>
+      {/* Main appointment booking */}
       <BookingForm />
-
+      {/* Status checker */}
       <BookingStatus />
-
-      <CancelAppointment />
-
+      {/* Cancel appointment */}
+      <CancelAppointment /> {/* <-- add this */}
+      {/* Feedback */}
       <Feedback />
     </div>
   );
